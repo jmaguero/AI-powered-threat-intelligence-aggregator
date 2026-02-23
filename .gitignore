@@ -58,6 +58,7 @@ out/
 # IDE / Editor
 .vscode/
 .idea/
+PHASE*.md
 *.swp
 *.swo
 *~
