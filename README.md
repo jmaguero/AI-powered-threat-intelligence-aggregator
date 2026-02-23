@@ -1,187 +1,172 @@
-# AI-Powered Threat Intelligence Aggregator (Django + React)
-
-A threat intelligence platform that uses LLMs to summarize security feeds, extract IOCs, and assess relevance. Built incrementally — each phase works on its own before moving to the next.
-
-**Fully local**: The entire stack runs on your machine with no cloud dependencies. Fetch feeds while online, then work offline with everything stored locally.
-
-## Tech Stack
-
-- [x] **Backend**: Django REST Framework
-- [ ] **Frontend**: React
-- [x] **Database**: PostgreSQL
-- [x] **AI**: Ollama (local LLMs)
-- [x] **Task Queue**: Celery + Redis
-- [ ] **CVE Data**: cve-search (local MongoDB, `../cve-search`)
-- [x] **Vector DB**: ChromaDB (local, no cloud needed)
-- [ ] **Deployment**: Docker Compose → Kubernetes
+<div align="center">
+  <h1>🛡️ AI-Powered Threat Intelligence Aggregator</h1>
+  <p>
+    <strong>A local, offline-first threat intelligence platform that leverages LLMs to aggregate, summarize, enrich, and semantically search security feeds.</strong>
+  </p>
+  <p>
+    <img alt="Django" src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white" />
+    <img alt="React" src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
+    <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" />
+    <img alt="Docker" src="https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white" />
+    <img alt="Celery" src="https://img.shields.io/badge/celery-%2337814A.svg?style=for-the-badge&logo=celery&logoColor=white" />
+    <img alt="Redis" src="https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white" />
+  </p>
+</div>
 
 ---
 
-## Phase 1: Paper Plane — Django + One Feed ✅
+## 📖 Overview
 
-**Goal**: Get Django running and pulling from a single threat intel feed.
+The **AI-Powered Threat Intelligence Aggregator** is designed to help security professionals sort through the noise of constant security alerts, news, and feeds. It fetches articles from multiple trusted sources (like CISA, Krebs, etc.), leverages local Large Language Models (LLMs) to automatically generate concise summaries, assigns threat labels and severities, and enables natural language (semantic) search over your entire threat data repository.
 
-- [x] Set up Django project with one app (`feeds`)
-- [x] One model: `Article` (title, date, link, summary, source)
-- [x] Management command to fetch a single RSS feed (e.g., CISA alerts)
-- [x] One DRF endpoint: `GET /api/articles/` — list stored articles
-- [x] SQLite is fine for now (swap to PostgreSQL later)
-- [x] **Dependencies**: `djangorestframework`, `feedparser`
-- [x] **Tip**: Fetch and store articles while you have internet — everything else works offline
-- [x] **Done when**: You run the management command, it fetches articles, and you can see them at `/api/articles/`
+**Privacy-first & local-by-design:** The entire stack—including the LLM, vector database, and PostgreSQL—can run seamlessly on a single host (your local machine or a private server). No data needs to be sent to external cloud APIs, making it inherently secure for internal operations and sensitive analysis. You can fetch feeds while online, and perform all enrichment and search operations offline.
+
+**Deploy Anywhere:** While designed to work fully locally for privacy, the entire project is containerized with Docker Compose, making it trivial to deploy to a VPS, home lab, or cloud environment if you choose to host it centrally for a team.
 
 ---
 
-## Phase 2: Kite — Multiple Sources + PostgreSQL ✅
+## ✨ Key Features
 
-**Goal**: Aggregate from multiple feeds with a real database.
-
-- [x] Add 2-3 more RSS/Atom feeds (Krebs, US-CERT, BleepingComputer)
-- [x] Switch from SQLite to PostgreSQL
-- [x] Deduplicate articles by URL
-- [x] Add filtering to the API: by source, date range
-- [x] Database migrations and proper indexing
-- [x] **Done when**: Multiple feeds are being ingested and queryable via the API
+- **🌐 Multi-Source Feed Ingestion:** Automatically pull in RSS/Atom feeds from various trusted threat intellect sources.
+- **🤖 Local LLM Enrichment (Ollama):** Generates single-paragraph summaries, identifies threat types (e.g., ransomware, phishing), and tags affected technologies, completely offline.
+- **🧠 Semantic Search (RAG):** Built-in vector database (ChromaDB) to query against historical threat data using natural language queries (e.g., *"recent ransomware targeting healthcare"*).
+- **⚙️ Asynchronous Processing:** Uses Celery & Redis to handle article fetching, heavy LLM processing, and text embedding in the background.
+- **🐳 Containerized Stack:** Simple one-command deployment using Docker Compose.
 
 ---
 
-## Phase 3: Glider — LLM Summarization & Classification ✅
+## 🛠️ Tech Stack
 
-**Goal**: Use an LLM to summarize and tag articles.
+### Backend
+- **Framework:** Django & Django REST Framework (DRF)
+- **Database:** PostgreSQL
+- **Background Tasks:** Celery + Redis
+- **AI / LLM Integration:** Ollama (Local Models), ChromaDB (Vector DB)
 
-- [x] Set up Ollama for local models
-- [x] Send article content to Ollama's local API for:
-  - [x] A one-paragraph summary
-  - [x] Tags: threat type (ransomware, phishing, etc.), severity, affected technology
-- [x] New model fields or separate model for AI-generated metadata
-- [x] API endpoint to filter by tag: `GET /api/articles/?threat_type=ransomware`
-- [x] **New dependency**: `ollama` Python SDK (talks to local Ollama server)
+### Frontend
+- **Framework:** React + Vite
+- **Routing:** React Router
+- **HTTP Client:** Axios
 
----
-
-## Phase 4: Biplane — Celery + Background Processing ✅
-
-**Goal**: Move feed scraping and LLM calls to background tasks.
-
-- [x] Set up Celery with Redis as the broker
-- [x] Periodic task to fetch feeds on a schedule
-- [x] Async task for LLM enrichment (summarize, tag, extract)
-- [x] Proper error handling and retry logic
-- [x] **New dependencies**: `celery`, `redis`
+### DevOps
+- **Containerization:** Docker & Docker Compose
+- **Dependency Management:** Poetry & npm (and pnpm)
 
 ---
 
-## Phase 5: Airplane — IOC & CVE Extraction
+## 🏗️ Architecture Flow
 
-**Goal**: Pull indicators of compromise and CVE data out of articles.
-
-- [ ] Extract from article text:
-  - [ ] IP addresses, domains, file hashes (MD5, SHA1, SHA256), CVE IDs
-- [ ] Start with regex, enhance with LLM for context
-- [ ] Cross-reference extracted CVE IDs against local `../cve-search` database for full details (severity, affected products, references)
-- [ ] New model: `IOC` linked to source articles
-- [ ] API endpoints:
-  - [ ] `GET /api/iocs/?type=ip`
-  - [ ] `GET /api/cves/?id=CVE-2024-1234` — enriched from local cve-search
+1. **Ingest:** A recurring Celery task attempts to fetch RSS feeds.
+2. **Store:** Articles are deduplicated and saved into PostgreSQL.
+3. **Enrich:** Asynchronous task triggers an Ollama model (e.g., Mistral/Llama) to parse, summarize, and categorize the article text.
+4. **Embed:** Post-enrichment, text is vectorized and embedded into ChromaDB for semantic search.
+5. **Serve:** React dashboard & comprehensive REST APIs expose the data so security analysts can easily browse, filter, or chat with their aggregated intelligence.
 
 ---
 
-## Phase 6: Jet — React Dashboard
+## 🚀 Getting Started
 
-**Goal**: Build a frontend to browse and search threat intel.
+### Prerequisites
 
-- [ ] React app with filtering and search
-- [ ] Views: article list, article detail with IOCs, IOC search
-- [ ] Security headers and CORS configuration
-- [ ] **Done when**: You can browse, filter, and search articles in the browser
+Before starting, ensure you have the following installed:
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+- [Ollama](https://ollama.com/) (running locally on your host machine)
 
----
-
-## Phase 7: Rocket — RAG + Vector Search ✅
-
-**Goal**: Natural language queries over your threat intel.
-
-- [x] Embed articles into a vector database (ChromaDB to start)
-- [x] RAG pipeline: query with natural language, retrieve relevant threats
-- [x] API endpoint: `GET /api/search/?q=recent ransomware targeting healthcare`
-- [x] **New dependency**: `chromadb` (runs fully local, no cloud account needed)
-- [x] Automatic embedding of articles after AI enrichment
-- [x] Management command to backfill embeddings: `python manage.py embed_articles`
-- [x] **Done when**: You can query articles using natural language and get semantically relevant results
-
-### Usage Examples
-
+**1. Set up Ollama**
+Ensure your local Ollama instance is up and running, then pull your desired model (e.g., `mistral` or `llama3`):
 ```bash
-# Search for ransomware articles
-curl "http://localhost:8000/api/articles/search/?q=ransomware attacks on healthcare"
-
-# Search with filters
-curl "http://localhost:8000/api/articles/search/?q=critical vulnerabilities&severity=critical&limit=5"
-
-# Get vector database statistics
-curl "http://localhost:8000/api/articles/vector-stats/"
-
-# Backfill embeddings for existing articles
-python manage.py embed_articles --enriched-only
-
-# Embed all articles (including unenriched)
-python manage.py embed_articles --limit 100
+ollama pull mistral
 ```
 
----
+**2. Clone the Repository**
+```bash
+git clone https://github.com/yourusername/AI-powered-threat-intelligence-aggregator.git
+cd AI-powered-threat-intelligence-aggregator
+```
 
-## Phase 8: Spaceship — Docker + Deployment
-
-**Goal**: Containerize and orchestrate everything.
-
-- [x] Dockerfiles for Django, React, Celery worker
-- [x] Docker Compose to run the full stack locally
-- [ ] API versioning
-- [ ] Caching strategy with Redis
-
-### Docker Quick Start (One Command)
-
-1. Copy env template and set secrets/passwords:
+**3. Environment Variables**
+Copy the sample environment configuration:
 ```bash
 cp .env.example .env
 ```
+*(Optionally modify the `.env` file to customize database credentials or pointing the Ollama host if it does not reside on standard `localhost:11434`)*
 
-2. Start full local stack:
+### Quick Start with Docker
+
+Run the complete stack with a single command:
 ```bash
 docker compose up --build
 ```
 
-Services started:
-- Django API: `http://localhost:8000`
-- React frontend: `http://localhost:5173`
-- PostgreSQL: `localhost:5433`
-- Redis: `localhost:6380`
-- Celery worker + beat
-
-Notes:
-- Django migrations run automatically when `backend` starts.
-- Postgres app user/database are initialized automatically on first startup.
-- On first run (empty `Article` table), backend auto-runs:
-  - `python manage.py fetch_feed`
-  - `python manage.py enrich_articles --limit 20` (configurable)
-- Ollama is still expected to run separately on the host for AI enrichment.
+**What happens?**
+- Django API binds to `http://localhost:8000`
+- React Frontend binds to `http://localhost:5173`
+- PostgreSQL & Redis boot up and wire themselves automatically to the background Celery workers.
+- **Auto-Initialization:** If the database is empty on the first run, the backend will automatically migrate and run the `fetch_feed` and `enrich_articles` background tasks.
 
 ---
 
-## Best Practices (Applied as We Go)
+## 💡 Usage Examples
 
-- [ ] Database migrations and version control
-- [ ] Secrets management (environment variables, never hardcoded)
-- [ ] Security headers and CORS
-- [ ] API versioning
-- [ ] Caching strategy
-- [ ] Background task management
+### REST API
 
-## Offline-First Prerequisites
+The Django backend exposes various endpoints for consuming or managing intelligence.
 
-Before going offline, make sure you have:
-- [ ] `ollama pull mistral` (or whichever model you pick) — downloads the model weights locally
-- [ ] `pip install` all dependencies (or use a venv with everything pre-installed)
-- [ ] Fetched a batch of articles to have data to work with
-- [ ] `../cve-search` populated with latest CVE data
-- [ ] PostgreSQL, Redis running locally
+**Search via Vector/RAG query:**
+```bash
+curl "http://localhost:8000/api/articles/search/?q=ransomware attacks on healthcare"
+```
+
+**Filtering with standard parameters:**
+```bash
+curl "http://localhost:8000/api/articles/search/?q=critical&severity=critical&limit=5"
+```
+
+### Administrative Commands
+
+You can manually trigger specific pipelines through `manage.py` (either locally via Poetry or within the Django container):
+
+```bash
+# Force a feed refresh
+python manage.py fetch_feed
+
+# Embed enriched articles into the Vector Database
+python manage.py embed_articles --enriched-only
+
+# View Vector Database Statistics
+curl "http://localhost:8000/api/articles/vector-stats/"
+```
+
+---
+
+## 🗺️ Roadmap & Future Enhancements
+
+The platform is designed in iterative phases. Here is what is on the horizon:
+
+- [ ] **IOC Extraction:** Use regex & LLMs to extract precise Indicators of Compromise (IPs, MD5/SHA hashes, domains).
+- [ ] **Local CVE Database Integration:** Connect local `cve-search` logic for expanded vulnerability context.
+- [ ] **Advanced Frontend Dashboard:** Complete the React-based UI to feature graphical timelines, advanced multi-tag filtering, and deep-dive views on specific IOCs.
+- [ ] **Production Deployment Patterns:** Helm charts and Kubernetes manifests for enterprise-scale deployments.
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! 
+Feel free to check the [issues page](https://github.com/yourusername/AI-powered-threat-intelligence-aggregator/issues) if you want to contribute.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the `LICENSE` file for details.
+
+---
+
+> Built with 💻 by [JM Aguero](https://github.com/yourusername)
