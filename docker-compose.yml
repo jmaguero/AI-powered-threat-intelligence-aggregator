@@ -1,0 +1,124 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_EXPOSE_PORT:-5433}:5432"
+    environment:
+      POSTGRES_USER: ${PG_ADMIN_USER:-pg_admin}
+      POSTGRES_PASSWORD: ${PG_ADMIN_PASSWORD:-pg_admin_password}
+      POSTGRES_DB: postgres
+      APP_DB_NAME: ${POSTGRES_DB:-threatintel}
+      APP_DB_USER: ${POSTGRES_USER:-threatintel_app}
+      APP_DB_PASSWORD: ${POSTGRES_PASSWORD:-threatintel_app_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init-app-db.sh:/docker-entrypoint-initdb.d/init-app-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_ADMIN_USER:-pg_admin} -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_EXPOSE_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DB_ENGINE: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      OLLAMA_HOST: http://host.docker.internal:11434
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      AUTO_BOOTSTRAP_FEEDS: ${AUTO_BOOTSTRAP_FEEDS:-1}
+      BOOTSTRAP_ENRICH_LIMIT: ${BOOTSTRAP_ENRICH_LIMIT:-20}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes:
+      - .:/app
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DB_ENGINE: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      SKIP_MIGRATIONS: "1"
+      OLLAMA_HOST: http://host.docker.internal:11434
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["poetry", "run", "celery", "-A", "threatintel", "worker", "--loglevel=info"]
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DB_ENGINE: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      SKIP_MIGRATIONS: "1"
+      OLLAMA_HOST: http://host.docker.internal:11434
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["poetry", "run", "celery", "-A", "threatintel", "beat", "--loglevel=info"]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    environment:
+      VITE_API_URL: http://localhost:8001/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

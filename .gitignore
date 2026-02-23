@@ -1,0 +1,95 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Django
+*.sqlite3
+db.sqlite3
+local_settings.py
+/static/
+/media/
+.env
+.env.local
+.env.*.local
+
+# React / Node
+node_modules/
+/build/
+/dist/
+npm-debug.log
+yarn-error.log
+.next/
+out/
+*.tsbuildinfo
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# OS
+Thumbs.db
+.env
+
+# Docker / Services
+.docker/
+docker-compose.override.yml
+*.log
+logs/
+
+# Data & Databases
+chroma_data/
+vector_store/
+.ollama/
+redis_data/
+postgres_data/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage.html
+
+# Package managers
+*.lock
+Pipfile.lock
+
+# Celery
+celerybeat-schedule
