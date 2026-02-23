@@ -165,7 +165,7 @@ Feel free to check the [issues page](https://github.com/yourusername/AI-powered-
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+This project is licensed under the GNU General Public License v3.0 (GPLv3) - see the `LICENSE` file for details. This means you are free to use, modify, and distribute this software, but any derivative works must also be open source and licensed under GPLv3.
 
 ---
 
