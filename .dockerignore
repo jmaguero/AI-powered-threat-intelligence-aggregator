@@ -1,0 +1,16 @@
+.git
+.gitignore
+.claude
+.continue
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+db.sqlite3
+node_modules
+frontend/node_modules
+chroma_db
+.env
