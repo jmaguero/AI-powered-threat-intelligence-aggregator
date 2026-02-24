@@ -163,7 +163,7 @@ jobs:
       - name: OWASP ZAP Baseline Scan (Targeting LLM Endpoints & Web UI)
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          target: "http://localhost:8000" # Backend API for DAST testing
+          target: "http://localhost:8001" # Backend API for DAST testing
           rules_file_name: ".zap/rules.tsv" # Optional: tune zap rules
           cmd_options: "-a" # Run AJAX spider for single page applications (React)
           fail_action: false # Audit mode: Report only, do not block PRs merging to main yet
