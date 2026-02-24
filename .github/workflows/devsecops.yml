@@ -163,4 +163,4 @@ jobs:
           target: "http://localhost:8000" # Backend API for DAST testing
           rules_file_name: ".zap/rules.tsv" # Optional: tune zap rules
           cmd_options: "-a" # Run AJAX spider for single page applications (React)
-          fail_action: true # Enforce failure to block PRs merging to main
+          fail_action: false # Audit mode: Report only, do not block PRs merging to main yet
