@@ -162,7 +162,7 @@ jobs:
         run: sudo chmod -R 777 .
 
       - name: OWASP ZAP Baseline Scan (Targeting LLM Endpoints & Web UI)
-        uses: zaproxy/action-baseline@v0.12.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: "http://localhost:5173" # Frontend Application for DAST testing
           rules_file_name: ".zap/rules.tsv" # Optional: tune zap rules
