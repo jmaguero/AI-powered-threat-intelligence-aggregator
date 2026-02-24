@@ -140,7 +140,7 @@ jobs:
   dast:
     name: ⚡ OWASP ZAP Dynamic Scan
     runs-on: ubuntu-latest
-    # needs: container-security # TEMPORARILY DISABLED FOR LOCAL ACT TESTING
+    needs: container-security
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
