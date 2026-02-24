@@ -140,7 +140,7 @@ jobs:
   dast:
     name: ⚡ OWASP ZAP Dynamic Scan
     runs-on: ubuntu-latest
-    needs: container-security
+    # needs: container-security # TEMPORARILY DISABLED FOR LOCAL ACT TESTING
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -169,4 +169,5 @@ jobs:
           cmd_options: "-a" # Run AJAX spider for single page applications (React)
           fail_action: false # Audit mode: Report only, do not block PRs merging to main yet
           allow_issue_writing: false # Do not attempt to open GitHub Issues for findings
+          token: "" # Prevent GitHub API interactions entirely
           artifact_name: "zap-scan-report" # Override default invalid artifact name
