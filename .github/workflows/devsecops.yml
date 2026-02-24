@@ -30,7 +30,7 @@ jobs:
 
       # Trufflehog will fail the build immediately if it finds verified secrets
       - name: Scan for Secrets
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3.93.4
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
@@ -51,7 +51,7 @@ jobs:
       # Semgrep handles standard web vulnerabilities and OWASP LLM Rules
       - name: Run Semgrep (Web & LLM Security Rules)
         run: |
-          pip install semgrep
+          pip install semgrep==1.152.0
           semgrep scan --config="p/default" --config="p/owasp-top-ten" --config="p/python" --config="p/django" --config="p/react" --config="p/javascript" --sarif > semgrep.sarif || true
 
       - name: Upload Semgrep SARIF to GitHub Security Dashboard
@@ -64,7 +64,7 @@ jobs:
       # Bandit for Python-specific security checks
       - name: Run Bandit (Python SAST)
         run: |
-          pip install bandit
+          pip install bandit==1.9.3
           bandit -r ./backend -ll -ii -f json -o bandit-results.json || true # allow failure to upload results first
 
       - name: Upload Bandit Results

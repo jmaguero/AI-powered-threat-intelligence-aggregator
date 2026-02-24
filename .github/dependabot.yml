@@ -1,0 +1,26 @@
+# To automatically keep GitHub Actions updated, we can use Dependabot.
+# This configuration file will check for updates to actions used in workflows
+# and automatically create pull requests to update them.
+
+# Location: .github/dependabot.yml
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    # Optional: assign reviewers or add labels
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "python"
