@@ -1,0 +1,178 @@
+.cve-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background-color: #ffffff;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.cve-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.cve-card.loading-pulse {
+  padding: 16px;
+  color: #666;
+  font-style: italic;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.cve-card.error {
+  padding: 16px;
+  color: #d32f2f;
+  background-color: #ffebee;
+  border-color: #ffcdd2;
+}
+
+/* Header styling */
+.cve-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid transparent;
+}
+
+.cve-header:hover {
+  background-color: #f1f3f5;
+}
+
+.cve-title-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cve-title-area h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.cvss-score {
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #e9ecef;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #495057;
+}
+
+.cve-expand-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: transform 0.2s ease;
+}
+
+.cve-expand-btn:focus {
+  outline: none;
+}
+
+/* Badge styling derived from ArticleDetail.css logic */
+.cve-badge {
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.severity-critical { border-left: 4px solid #d32f2f; }
+.severity-critical .cve-badge { background-color: #ffebee; color: #d32f2f; }
+.severity-critical .cve-header { background-color: #fafafa; }
+
+.severity-high { border-left: 4px solid #ff9800; }
+.severity-high .cve-badge { background-color: #fff3e0; color: #ff9800; }
+
+.severity-medium { border-left: 4px solid #ffc107; }
+.severity-medium .cve-badge { background-color: #fff8e1; color: #f57f17; }
+
+.severity-low { border-left: 4px solid #4caf50; }
+.severity-low .cve-badge { background-color: #e8f5e9; color: #2e7d32; }
+
+.severity-unknown .cve-badge { background-color: #e0e0e0; color: #616161; }
+
+/* Expanded Body section */
+.cve-body {
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.cve-summary {
+  font-size: 0.95rem;
+  color: #444;
+  line-height: 1.5;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.cve-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.cve-meta-item {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.cve-meta-item strong {
+  color: #333;
+}
+
+.cve-products {
+  font-size: 0.85rem;
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.cve-products ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  color: #555;
+}
+
+.cve-products li {
+  margin-bottom: 4px;
+}
+
+.cve-products .more-items {
+  font-style: italic;
+  color: #888;
+  list-style: none;
+  margin-left: -20px;
+  margin-top: 8px;
+}
+
+.cve-references {
+  margin-top: 8px;
+}
+
+.cve-references a {
+  font-size: 0.9rem;
+  color: #1976d2;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cve-references a:hover {
+  text-decoration: underline;
+}
