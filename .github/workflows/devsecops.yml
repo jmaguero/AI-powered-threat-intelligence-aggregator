@@ -146,6 +146,9 @@ jobs:
 
       # Architecture Note: Currently spins up the local Ollama stack.
       # Future Phase B: We will mock responses or use a dedicated staging OPENROUTER_API_KEY
+      - name: Seed Database Environment Variables
+        run: cp .env.example .env
+
       - name: Spin up staging environment (Docker Compose)
         run: docker compose -f docker-compose.yml up -d
 
