@@ -14,10 +14,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --no-cache-dir poetry
 
-COPY pyproject.toml poetry.lock* /app/
+RUN addgroup --system appuser && adduser --system --ingroup appuser appuser
+
+COPY --chown=appuser:appuser pyproject.toml poetry.lock* /app/
 RUN poetry install --no-root
 
-COPY . /app
+COPY --chown=appuser:appuser . /app
 RUN chmod +x /app/docker/backend/entrypoint.sh
+
+USER appuser
 
 ENTRYPOINT ["/app/docker/backend/entrypoint.sh"]

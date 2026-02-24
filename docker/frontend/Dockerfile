@@ -3,11 +3,14 @@ FROM node:20-alpine
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
 WORKDIR /app
+RUN chown node:node /app
 
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+USER node
+
+COPY --chown=node:node frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-COPY frontend/ ./
+COPY --chown=node:node frontend/ ./
 
 EXPOSE 5173
 

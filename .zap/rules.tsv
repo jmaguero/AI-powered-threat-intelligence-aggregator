@@ -1,0 +1,11 @@
+# ZAP Baseline Scan — Rule Overrides
+# Format: rule_id<TAB>RISK_LEVEL
+# Levels: IGNORE | INFO | WARN | FAIL
+#
+# fail_action: false is set in the workflow, so findings never block a PR merge.
+# Override rules here only when you want to permanently suppress noise
+# or promote a finding to a hard failure regardless of that flag.
+#
+# Example:
+# 10016	IGNORE	# Web Browser XSS Protection Not Enabled (handled by CSP)
+# 10035	WARN	# Strict-Transport-Security not set (expected in local dev)
