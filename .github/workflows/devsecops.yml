@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Need full history to scan past commits
 
@@ -46,7 +46,7 @@ jobs:
     needs: secret-scan
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Semgrep handles standard web vulnerabilities and OWASP LLM Rules
       - name: Run Semgrep (Web & LLM Security Rules)
@@ -83,7 +83,7 @@ jobs:
     needs: secret-scan
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run Trivy vulnerability scanner in repo mode
         uses: aquasecurity/trivy-action@master
@@ -110,7 +110,7 @@ jobs:
     needs: [sast, sca]
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Build the image using the latest commit sha
       - name: Build Application Docker Image
@@ -143,7 +143,7 @@ jobs:
     needs: container-security
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Architecture Note: Currently spins up the local Ollama stack.
       # Future Phase B: We will mock responses or use a dedicated staging OPENROUTER_API_KEY
