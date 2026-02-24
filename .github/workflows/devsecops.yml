@@ -157,6 +157,9 @@ jobs:
           echo "Waiting for backend API..."
           sleep 45 # Adjust based on startup time
 
+      - name: Fix ZAP Working Directory Permissions
+        run: chmod -R 777 .
+
       - name: OWASP ZAP Baseline Scan (Targeting LLM Endpoints & Web UI)
         uses: zaproxy/action-baseline@v0.12.0
         with:
