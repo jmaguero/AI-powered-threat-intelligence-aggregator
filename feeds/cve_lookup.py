@@ -1,51 +1,27 @@
-"""CVE lookup integration with cve-search MongoDB database."""
+"""CVE lookup integration with cve-search public API (cve.circl.lu)."""
 
 import logging
-from functools import lru_cache
+import time
 from typing import Optional, Dict, List
 
-try:
-    import pymongo
-    PYMONGO_AVAILABLE = True
-except ImportError:
-    PYMONGO_AVAILABLE = False
-
+import requests
 from django.conf import settings
-
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
 
-@lru_cache(maxsize=1)
-def get_cve_db_connection():
-    """
-    Get connection to cve-search MongoDB database.
-
-    Returns:
-        MongoDB database object or None if unavailable
-    """
-    if not PYMONGO_AVAILABLE:
-        logger.warning("pymongo not installed - CVE lookup unavailable")
-        return None
-
-    try:
-        client = pymongo.MongoClient(
-            settings.CVE_SEARCH_MONGO_URI,
-            serverSelectionTimeoutMS=5000,  # 5 second timeout
-        )
-        # Test connection
-        client.server_info()
-        db = client[settings.CVE_SEARCH_DB_NAME]
-        logger.info(f"Connected to cve-search database: {settings.CVE_SEARCH_DB_NAME}")
-        return db
-    except Exception as e:
-        logger.error(f"Failed to connect to cve-search MongoDB: {e}")
-        return None
+def get_api_base_url() -> str:
+    """Get the base URL for the cve-search API."""
+    base_url = getattr(settings, "CVE_SEARCH_API_BASE_URL", "https://cve.circl.lu/api/")
+    if not base_url.endswith("/"):
+        base_url += "/"
+    return base_url
 
 
 def lookup_cve(cve_id: str) -> Optional[Dict]:
     """
-    Query cve-search for CVE details.
+    Query cve.circl.lu API for CVE details, utilizing Redis cache.
 
     Args:
         cve_id: CVE identifier (e.g., "CVE-2021-44228")
@@ -58,103 +34,179 @@ def lookup_cve(cve_id: str) -> Optional[Dict]:
             'cvss': float,
             'cvss_v3': float,
             'severity': str,
-            'published': datetime,
-            'modified': datetime,
+            'published': str,
+            'modified': str,
             'references': List[str],
             'vulnerable_products': List[str],
         }
     """
-    db = get_cve_db_connection()
-    if not db:
+    if not cve_id:
         return None
 
-    try:
-        # Query the cves collection
-        cve_doc = db.cves.find_one({"id": cve_id.upper()})
+    cve_id = cve_id.upper()
+    cache_key = f"cve_lookup_{cve_id}"
 
-        if not cve_doc:
-            logger.debug(f"CVE not found in database: {cve_id}")
+    # 1. Check cache first
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        return cached_data
+
+    # 2. Fetch from API if not in cache
+    api_url = f"{get_api_base_url()}cve/{cve_id}"
+
+    try:
+        response = requests.get(api_url, timeout=10)
+
+        if response.status_code == 404:
+            logger.debug(f"CVE not found in CIRCL API: {cve_id}")
+            # Cache the "not found" state briefly to avoid hammering the API for invalid CVEs
+            cache.set(cache_key, None, timeout=3600)  # 1 hour
             return None
 
-        # Extract and normalize fields
-        result = {
-            "id": cve_doc.get("id", cve_id),
-            "summary": cve_doc.get("summary", ""),
-        }
+        response.raise_for_status()
+        cve_doc = response.json()
 
-        # CVSS scores
-        if "cvss" in cve_doc:
-            result["cvss"] = float(cve_doc["cvss"])
-        elif "impact" in cve_doc and "baseMetricV2" in cve_doc["impact"]:
-            result["cvss"] = float(
-                cve_doc["impact"]["baseMetricV2"].get("cvssV2", {}).get("baseScore", 0)
-            )
+        if not cve_doc:
+            return None
 
-        if "cvss-vector" in cve_doc:
-            result["cvss_vector"] = cve_doc["cvss-vector"]
+        # 3. Extract and normalize fields to match existing schema
+        result = _normalize_cve_data(cve_doc, cve_id)
 
-        # CVSS v3
-        if "impact" in cve_doc and "baseMetricV3" in cve_doc["impact"]:
-            result["cvss_v3"] = float(
-                cve_doc["impact"]["baseMetricV3"].get("cvssV3", {}).get("baseScore", 0)
-            )
-
-        # Severity (calculate from CVSS if not present)
-        if "severity" in cve_doc:
-            result["severity"] = cve_doc["severity"]
-        else:
-            cvss_score = result.get("cvss_v3") or result.get("cvss", 0)
-            if cvss_score >= 9.0:
-                result["severity"] = "CRITICAL"
-            elif cvss_score >= 7.0:
-                result["severity"] = "HIGH"
-            elif cvss_score >= 4.0:
-                result["severity"] = "MEDIUM"
-            elif cvss_score > 0:
-                result["severity"] = "LOW"
-            else:
-                result["severity"] = "UNKNOWN"
-
-        # Dates
-        if "Published" in cve_doc:
-            result["published"] = cve_doc["Published"]
-        if "Modified" in cve_doc:
-            result["modified"] = cve_doc["Modified"]
-        if "last-modified" in cve_doc:
-            result["last_modified"] = cve_doc["last-modified"]
-
-        # References
-        references = []
-        if "references" in cve_doc:
-            for ref in cve_doc["references"]:
-                if isinstance(ref, str):
-                    references.append(ref)
-                elif isinstance(ref, dict) and "url" in ref:
-                    references.append(ref["url"])
-        result["references"] = references
-
-        # Vulnerable products/configurations
-        vulnerable_products = []
-        if "vulnerable_product" in cve_doc:
-            vulnerable_products = cve_doc["vulnerable_product"]
-        elif "vulnerable_configuration" in cve_doc:
-            vulnerable_products = cve_doc["vulnerable_configuration"]
-        result["vulnerable_products"] = vulnerable_products[:20]  # Limit to first 20
-
-        # CWE
-        if "cwe" in cve_doc:
-            result["cwe"] = cve_doc["cwe"]
+        # 4. Store in cache
+        cache_timeout = getattr(settings, "CVE_CACHE_TIMEOUT", 86400)  # Default 24h
+        cache.set(cache_key, result, timeout=cache_timeout)
 
         return result
 
-    except Exception as e:
-        logger.error(f"Error looking up CVE {cve_id}: {e}")
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout querying cve.circl.lu for {cve_id}")
         return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error querying cve.circl.lu for {cve_id}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error processing CVE {cve_id}: {e}")
+        return None
+
+
+def _normalize_cve_data(cve_doc: Dict, cve_id: str) -> Dict:
+    """Helper to normalize the CIRCL API JSON 5.1 doc into our standard format."""
+
+    result = {
+        "id": cve_id,
+        "summary": "",
+        "cvss": 0.0,
+        "cvss_v3": 0.0,
+        "cvss_vector": "",
+        "severity": "UNKNOWN",
+        "published": "",
+        "modified": "",
+        "references": [],
+        "vulnerable_products": [],
+        "cwe": "",
+    }
+
+    # Meta data dates
+    meta = cve_doc.get("cveMetadata", {})
+    result["published"] = meta.get("datePublished", "")
+    result["modified"] = meta.get("dateUpdated", "")
+    result["last_modified"] = meta.get("dateUpdated", "")
+
+    containers = cve_doc.get("containers", {})
+    cna = containers.get("cna", {})
+    adps = containers.get("adp", [])
+
+    # Summary
+    descriptions = cna.get("descriptions", [])
+    if descriptions:
+        # Try to find English desc
+        en_desc = next(
+            (d.get("value") for d in descriptions if d.get("lang") == "en"), None
+        )
+        result["summary"] = en_desc or descriptions[0].get("value", "")
+
+    # References
+    for ref in cna.get("references", []):
+        url = ref.get("url")
+        if url:
+            result["references"].append(url)
+
+    # Metrics (CVSS)
+    metrics_list = cna.get("metrics", [])
+    for adp in adps:
+        metrics_list.extend(adp.get("metrics", []))
+
+    cvss_v2, cvss_v3 = 0.0, 0.0
+    cvss_vector, severity = "", ""
+
+    for m in metrics_list:
+        if "cvssV3_1" in m or "cvssV3_0" in m:
+            v3 = m.get("cvssV3_1") or m.get("cvssV3_0")
+            score = float(v3.get("baseScore", 0))
+            if score > cvss_v3:
+                cvss_v3 = score
+                cvss_vector = v3.get("vectorString", cvss_vector)
+                severity = v3.get("baseSeverity", severity)
+        elif "cvssV2_0" in m:
+            v2 = m.get("cvssV2_0")
+            score = float(v2.get("baseScore", 0))
+            if score > cvss_v2:
+                cvss_v2 = score
+                if (
+                    not cvss_vector
+                ):  # V3 takes precedence for vector and severity if available later
+                    cvss_vector = v2.get("vectorString", "")
+                    # V2 didn't always have baseSeverity, we'll calculate it if missing
+
+    result["cvss"] = cvss_v2
+    result["cvss_v3"] = cvss_v3
+    result["cvss_vector"] = cvss_vector
+
+    # Severity
+    if severity:
+        result["severity"] = str(severity).upper()
+    else:
+        # Calculate if not explicitly provided
+        score = cvss_v3 or cvss_v2
+        if score >= 9.0:
+            result["severity"] = "CRITICAL"
+        elif score >= 7.0:
+            result["severity"] = "HIGH"
+        elif score >= 4.0:
+            result["severity"] = "MEDIUM"
+        elif score > 0:
+            result["severity"] = "LOW"
+
+    # CWE
+    problem_types = cna.get("problemTypes", [])
+    for pt in problem_types:
+        for desc in pt.get("descriptions", []):
+            if desc.get("cweId"):
+                result["cwe"] = desc.get("cweId")
+                break
+            elif "CWE" in desc.get("description", ""):
+                result["cwe"] = desc.get("description")
+                break
+        if result["cwe"]:
+            break
+
+    # Affected products (simplified extraction for JSON 5.1)
+    affected = cna.get("affected", [])
+    for aff in affected:
+        vendor = aff.get("vendor", "Unknown")
+        product = aff.get("product", "Unknown")
+        # Format something readable since CPEs are complex in 5.1
+        if vendor != "Unknown" and product != "Unknown":
+            result["vulnerable_products"].append(f"{vendor}:{product}")
+        elif product != "Unknown":
+            result["vulnerable_products"].append(product)
+
+    return result
 
 
 def bulk_lookup_cves(cve_ids: List[str]) -> Dict[str, Dict]:
     """
-    Efficiently lookup multiple CVEs in a single query.
+    Lookup multiple CVEs, utilizing cache and staggering API requests.
 
     Args:
         cve_ids: List of CVE identifiers
@@ -162,47 +214,42 @@ def bulk_lookup_cves(cve_ids: List[str]) -> Dict[str, Dict]:
     Returns:
         Dict mapping CVE ID to CVE details
     """
-    db = get_cve_db_connection()
-    if not db or not cve_ids:
+    if not cve_ids:
         return {}
 
-    try:
-        # Normalize CVE IDs
-        normalized_ids = [cve_id.upper() for cve_id in cve_ids]
+    results = {}
+    normalized_ids = [cve_id.upper() for cve_id in cve_ids]
 
-        # Query all CVEs at once
-        cve_docs = db.cves.find({"id": {"$in": normalized_ids}})
+    # Process sequentially to respect rate limits
+    for i, cve_id in enumerate(normalized_ids):
+        # The inner method handles caching
+        cve_data = lookup_cve(cve_id)
+        if cve_data:
+            results[cve_id] = cve_data
 
-        results = {}
-        for doc in cve_docs:
-            cve_id = doc.get("id")
-            if cve_id:
-                # Reuse single lookup logic
-                results[cve_id] = lookup_cve(cve_id)
+        # Add a small delay between requests to not overwhelm the API
+        # Only sleep if we suspect an API call was made (not instantly from cache)
+        # 0.1s ensures max 10 requests per second
+        if i < len(normalized_ids) - 1:
+            time.sleep(0.1)
 
-        return results
-
-    except Exception as e:
-        logger.error(f"Error bulk looking up CVEs: {e}")
-        return {}
+    return results
 
 
 def test_connection() -> bool:
     """
-    Test connection to cve-search database.
+    Test connection to cve.circl.lu public API.
 
     Returns:
         True if connection successful, False otherwise
     """
-    db = get_cve_db_connection()
-    if not db:
-        return False
-
+    api_url = f"{get_api_base_url()}dbInfo"
     try:
-        # Try to count documents in cves collection
-        count = db.cves.count_documents({})
-        logger.info(f"cve-search database has {count:,} CVE entries")
+        response = requests.get(api_url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        logger.info(f"Connected to cve.circl.lu API. DB Info: {data}")
         return True
     except Exception as e:
-        logger.error(f"Failed to query cve-search database: {e}")
+        logger.error(f"Failed to connect to cve.circl.lu API: {e}")
         return False
