@@ -5,6 +5,7 @@ from feeds.models import Article, IOC
 
 class ArticleSerializer(serializers.ModelSerializer):
     ioc_count = serializers.SerializerMethodField()
+    iocs = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -22,10 +23,16 @@ class ArticleSerializer(serializers.ModelSerializer):
             "affected_tech",
             "enriched_at",
             "ioc_count",
+            "iocs",
         ]
 
     def get_ioc_count(self, obj):
         return obj.iocs.count()
+
+    def get_iocs(self, obj):
+        from feeds.serializers import IOCSerializer
+
+        return IOCSerializer(obj.iocs.all(), many=True).data
 
 
 class IOCSerializer(serializers.ModelSerializer):
@@ -53,11 +60,12 @@ class IOCSerializer(serializers.ModelSerializer):
         return obj.articles.count()
 
     def get_article_ids(self, obj):
-        return list(obj.articles.values_list('id', flat=True))
+        return list(obj.articles.values_list("id", flat=True))
 
 
 class CVEDetailSerializer(serializers.Serializer):
     """Serializer for CVE data from cve-search database."""
+
     id = serializers.CharField()
     summary = serializers.CharField()
     cvss = serializers.FloatField(required=False)
@@ -68,8 +76,12 @@ class CVEDetailSerializer(serializers.Serializer):
     modified = serializers.DateTimeField(required=False)
     last_modified = serializers.DateTimeField(required=False)
     references = serializers.ListField(child=serializers.CharField(), required=False)
-    vulnerable_products = serializers.ListField(child=serializers.CharField(), required=False)
+    vulnerable_products = serializers.ListField(
+        child=serializers.CharField(), required=False
+    )
     cwe = serializers.CharField(required=False)
     # Our tracking data
-    seen_in_articles = serializers.ListField(child=serializers.IntegerField(), required=False)
+    seen_in_articles = serializers.ListField(
+        child=serializers.IntegerField(), required=False
+    )
     first_seen_in_feed = serializers.DateTimeField(required=False)

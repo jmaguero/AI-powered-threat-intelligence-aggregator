@@ -143,8 +143,6 @@ curl "http://localhost:8000/api/articles/vector-stats/"
 
 The platform is designed in iterative phases. Here is what is on the horizon:
 
-- [ ] **IOC Extraction:** Use regex & LLMs to extract precise Indicators of Compromise (IPs, MD5/SHA hashes, domains).
-- [ ] **Local CVE Database Integration:** Connect local `cve-search` logic for expanded vulnerability context.
 - [ ] **Advanced Frontend Dashboard:** Complete the React-based UI to feature graphical timelines, advanced multi-tag filtering, and deep-dive views on specific IOCs.
 - [ ] **Production Deployment Patterns:** Helm charts and Kubernetes manifests for enterprise-scale deployments.
 

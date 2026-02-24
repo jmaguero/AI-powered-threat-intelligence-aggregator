@@ -28,4 +28,10 @@ export const articlesAPI = {
   },
 };
 
+export const iocAPI = {
+  getCveDetails: (cveId) => {
+    return apiClient.get(`/articles/cves/${cveId}/`);
+  },
+};
+
 export default apiClient;

@@ -95,3 +95,7 @@ Pipfile.lock
 
 # Celery
 celerybeat-schedule
+
+# Agents
+.agents/
+.claude/

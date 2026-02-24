@@ -5,8 +5,8 @@ services:
     ports:
       - "${POSTGRES_EXPOSE_PORT:-5433}:5432"
     environment:
-      POSTGRES_USER: ${PG_ADMIN_USER:-pg_admin}
-      POSTGRES_PASSWORD: ${PG_ADMIN_PASSWORD:-pg_admin_password}
+      POSTGRES_USER: ${PG_ADMIN_USER:-db_admin}
+      POSTGRES_PASSWORD: ${PG_ADMIN_PASSWORD:-db_admin_password}
       POSTGRES_DB: postgres
       APP_DB_NAME: ${POSTGRES_DB:-threatintel}
       APP_DB_USER: ${POSTGRES_USER:-threatintel_app}
@@ -15,7 +15,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./docker/postgres/init-app-db.sh:/docker-entrypoint-initdb.d/init-app-db.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PG_ADMIN_USER:-pg_admin} -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${PG_ADMIN_USER:-db_admin} -d postgres"]
       interval: 5s
       timeout: 3s
       retries: 20

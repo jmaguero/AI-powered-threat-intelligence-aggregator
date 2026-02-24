@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { articlesAPI } from '../api/client';
+import CveDetails from './CveDetails';
 import './ArticleDetail.css';
 
 function ArticleDetail() {
@@ -145,21 +146,29 @@ function ArticleDetail() {
           </div>
         </section>
 
-        {/* IOC Section - Placeholder for Phase 5 */}
+        {/* Indicators of Compromise Section */}
         <section className="section ioc-section">
           <h2>Indicators of Compromise (IOCs)</h2>
-          <div className="placeholder">
-            <p>IOC extraction will be available after Phase 5 implementation.</p>
-            <p className="placeholder-note">
-              Features coming soon:
-            </p>
-            <ul>
-              <li>IP addresses</li>
-              <li>Domain names</li>
-              <li>File hashes (MD5, SHA1, SHA256)</li>
-              <li>CVE IDs with enriched data from local cve-search</li>
-            </ul>
-          </div>
+
+          {article.iocs && article.iocs.length > 0 ? (
+            <div className="ioc-list">
+              {article.iocs.map((ioc) => {
+                if (ioc.ioc_type === 'cve') {
+                  return <CveDetails key={ioc.id} cveId={ioc.value} />;
+                }
+
+                // Fallback for other IOC types (IP, Domain, etc - Phase 5)
+                return (
+                  <div key={ioc.id} className="ioc-item generic-ioc">
+                    <span className="ioc-type">{ioc.ioc_type.toUpperCase()}</span>
+                    <span className="ioc-value">{ioc.value}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="no-iocs">No Indicators of Compromise automatically extracted for this article.</p>
+          )}
         </section>
       </article>
     </div>
