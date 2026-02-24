@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import ArticleList from './components/ArticleList';
+
 import ArticleDetail from './components/ArticleDetail';
+import ArticleList from './components/ArticleList';
 import './App.css';
 
 function App() {

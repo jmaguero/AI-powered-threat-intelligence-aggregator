@@ -1,36 +1,41 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+
 import { articlesAPI } from '../api/client';
+import type { Article } from '../types';
+
 import CveDetails from './CveDetails';
 import './ArticleDetail.css';
 
 function ArticleDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [article, setArticle] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [article, setArticle] = useState<Article | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchArticle = async () => {
       try {
         setLoading(true);
         setError(null);
+        if (!id) return;
         const response = await articlesAPI.getById(id);
         setArticle(response.data);
-      } catch (err) {
-        setError(err.message || 'Failed to fetch article');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to fetch article';
+        setError(message);
         console.error('Error fetching article:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchArticle();
+    void fetchArticle();
   }, [id]);
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     try {
       return format(new Date(dateString), 'MMMM d, yyyy HH:mm');
@@ -39,7 +44,7 @@ function ArticleDetail() {
     }
   };
 
-  const getSeverityClass = (severity) => {
+  const getSeverityClass = (severity: string | null | undefined) => {
     if (!severity) return '';
     const lower = severity.toLowerCase();
     if (lower.includes('critical')) return 'severity-critical';
@@ -52,7 +57,7 @@ function ArticleDetail() {
   if (loading) {
     return (
       <div className="container">
-        <button onClick={() => navigate(-1)} className="back-btn">
+        <button onClick={() => { void navigate(-1); }} className="back-btn">
           ← Back
         </button>
         <div className="loading">Loading article...</div>
@@ -63,7 +68,7 @@ function ArticleDetail() {
   if (error || !article) {
     return (
       <div className="container">
-        <button onClick={() => navigate(-1)} className="back-btn">
+        <button onClick={() => { void navigate(-1); }} className="back-btn">
           ← Back
         </button>
         <div className="error">
@@ -75,7 +80,7 @@ function ArticleDetail() {
 
   return (
     <div className="container">
-      <button onClick={() => navigate(-1)} className="back-btn">
+      <button onClick={() => { void navigate(-1); }} className="back-btn">
         ← Back
       </button>
 
@@ -104,7 +109,7 @@ function ArticleDetail() {
           </div>
 
           <a
-            href={article.link}
+            href={article.link ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
             className="original-link"

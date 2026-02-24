@@ -86,7 +86,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           scan-type: "fs"
           ignore-unfixed: false
@@ -119,7 +119,7 @@ jobs:
           docker build -t app-image:${{ github.sha }} -f docker/backend/Dockerfile .
 
       - name: Scan Built Docker Image (Trivy)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.1
         with:
           image-ref: "app-image:${{ github.sha }}"
           format: "sarif"
@@ -148,15 +148,28 @@ jobs:
       # Architecture Note: Currently spins up the local Ollama stack.
       # Future Phase B: We will mock responses or use a dedicated staging OPENROUTER_API_KEY
       - name: Seed Database Environment Variables
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          # Disable feed bootstrap: requires Ollama + external network, neither available in CI
+          sed -i 's/AUTO_BOOTSTRAP_FEEDS=.*/AUTO_BOOTSTRAP_FEEDS=0/' .env
 
       - name: Spin up staging environment (Docker Compose)
         run: docker compose -f docker-compose.yml up -d
 
-      - name: Wait for Application & Ollama Readiness
+      - name: Wait for frontend to be ready
         run: |
-          echo "Waiting for backend API..."
-          sleep 45 # Adjust based on startup time
+          echo "Waiting for frontend (http://localhost:5173)..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5173 > /dev/null 2>&1; then
+              echo "Frontend ready after $((i * 5))s"
+              exit 0
+            fi
+            echo "[$i/30] Not ready yet, retrying in 5s..."
+            sleep 5
+          done
+          echo "Frontend did not become ready in time. Dumping logs:"
+          docker compose logs frontend
+          exit 1
 
       - name: Fix ZAP Working Directory Permissions
         run: sudo chmod -R 777 .
