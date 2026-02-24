@@ -54,7 +54,7 @@ jobs:
           semgrep scan --config="p/default" --config="p/owasp-top-ten" --config="p/python" --config="p/django" --config="p/react" --config="p/javascript" --sarif > semgrep.sarif || true
 
       - name: Upload Semgrep SARIF to GitHub Security Dashboard
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: semgrep.sarif
@@ -94,7 +94,7 @@ jobs:
           severity: "CRITICAL,HIGH"
 
       - name: Upload Trivy SARIF to GitHub Security Dashboard
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
@@ -115,7 +115,7 @@ jobs:
       - name: Build Application Docker Image
         run: |
           # Example build command depending on your actual structure
-          docker build -t app-image:${{ github.sha }} -f docker/Dockerfile.backend .
+          docker build -t app-image:${{ github.sha }} -f docker/backend/Dockerfile .
 
       - name: Scan Built Docker Image (Trivy)
         uses: aquasecurity/trivy-action@master
@@ -127,7 +127,7 @@ jobs:
           severity: "CRITICAL,HIGH"
 
       - name: Upload Trivy Image SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: "trivy-image-results.sarif"
