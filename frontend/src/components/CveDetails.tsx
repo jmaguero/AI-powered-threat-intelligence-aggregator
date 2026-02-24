@@ -1,27 +1,43 @@
+import { isAxiosError, isCancel } from 'axios';
 import { useState, useEffect } from 'react';
+
 import { iocAPI } from '../api/client';
-import { CveDetailsType } from '../types';
+import type { CveDetailsType } from '../types';
+
 import './CveDetails.css';
 
 type Props = {
     cveId: string;
 };
 
+const getSeverityClass = (severity: string | null | undefined): string => {
+    if (!severity) return 'severity-unknown';
+    const lower = severity.toLowerCase();
+    if (lower.includes('critical')) return 'severity-critical';
+    if (lower.includes('high')) return 'severity-high';
+    if (lower.includes('medium')) return 'severity-medium';
+    if (lower.includes('low')) return 'severity-low';
+    return 'severity-unknown';
+};
+
 function CveDetails({ cveId }: Props) {
     const [cveData, setCveData] = useState<CveDetailsType | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [expanded, setExpanded] = useState<boolean>(false);
+    const [expanded, setExpanded] = useState(false);
 
     useEffect(() => {
+        const controller = new AbortController();
+
         const fetchCve = async () => {
+            setLoading(true);
+            setError(null);
             try {
-                setLoading(true);
-                const response = await iocAPI.getCveDetails(cveId);
+                const response = await iocAPI.getCveDetails(cveId, controller.signal);
                 setCveData(response.data);
-            } catch (err: any) {
-                // If 404, we just say not found rather than exploding the whole page
-                if (err.response && err.response.status === 404) {
+            } catch (err: unknown) {
+                if (isCancel(err)) return;
+                if (isAxiosError(err) && err.response?.status === 404) {
                     setError('CVE not found in database');
                 } else {
                     setError('Failed to load CVE details');
@@ -31,9 +47,8 @@ function CveDetails({ cveId }: Props) {
             }
         };
 
-        if (cveId) {
-            fetchCve();
-        }
+        void fetchCve();
+        return () => controller.abort();
     }, [cveId]);
 
     if (loading) {
@@ -50,24 +65,14 @@ function CveDetails({ cveId }: Props) {
 
     if (!cveData) return null;
 
-    const getSeverityClass = (severity: string | null | undefined) => {
-        if (!severity) return 'severity-unknown';
-        const lower = severity.toLowerCase();
-        if (lower.includes('critical')) return 'severity-critical';
-        if (lower.includes('high')) return 'severity-high';
-        if (lower.includes('medium')) return 'severity-medium';
-        if (lower.includes('low')) return 'severity-low';
-        return 'severity-unknown';
-    };
-
     const hasExtraDetails =
         cveData.summary ||
-        (cveData.vulnerable_products && cveData.vulnerable_products.length > 0) ||
+        cveData.vulnerable_products.length > 0 ||
         cveData.cwe;
 
     return (
         <div className={`cve-card ${getSeverityClass(cveData.severity)}`}>
-            <div className="cve-header" onClick={() => hasExtraDetails && setExpanded(!expanded)}>
+            <div className="cve-header">
                 <div className="cve-title-area">
                     <h3>{cveData.id}</h3>
                     <span className={`cve-badge ${getSeverityClass(cveData.severity)}`}>
@@ -81,7 +86,12 @@ function CveDetails({ cveId }: Props) {
                 </div>
 
                 {hasExtraDetails && (
-                    <button className="cve-expand-btn" aria-label="Toggle details">
+                    <button
+                        className="cve-expand-btn"
+                        aria-label="Toggle details"
+                        aria-expanded={expanded}
+                        onClick={() => setExpanded(!expanded)}
+                    >
                         {expanded ? '▲' : '▼'}
                     </button>
                 )}
@@ -109,12 +119,12 @@ function CveDetails({ cveId }: Props) {
                         )}
                     </div>
 
-                    {cveData.vulnerable_products && cveData.vulnerable_products.length > 0 && (
+                    {cveData.vulnerable_products.length > 0 && (
                         <div className="cve-products">
                             <strong>Affected Products:</strong>
                             <ul>
-                                {cveData.vulnerable_products.slice(0, 5).map((prod: string, idx: number) => (
-                                    <li key={idx}>{prod}</li>
+                                {cveData.vulnerable_products.slice(0, 5).map((prod) => (
+                                    <li key={prod}>{prod}</li>
                                 ))}
                                 {cveData.vulnerable_products.length > 5 && (
                                     <li className="more-items">...and {cveData.vulnerable_products.length - 5} more</li>
@@ -123,7 +133,7 @@ function CveDetails({ cveId }: Props) {
                         </div>
                     )}
 
-                    {cveData.references && cveData.references.length > 0 && (
+                    {cveData.references.length > 0 && (
                         <div className="cve-references">
                             <a href={cveData.references[0]} target="_blank" rel="noopener noreferrer">
                                 Primary Reference ↗

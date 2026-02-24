@@ -1,8 +1,10 @@
+import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+
 import { articlesAPI } from '../api/client';
-import { Article, FilterParams } from '../types';
+import type { Article, FilterParams } from '../types';
+
 import FilterBar from './FilterBar';
 import './ArticleList.css';
 
@@ -24,8 +26,9 @@ function ArticleList() {
 
       const response = await articlesAPI.getAll(cleanFilters);
       setArticles(response.data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch articles');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch articles';
+      setError(message);
       console.error('Error fetching articles:', err);
     } finally {
       setLoading(false);
@@ -33,7 +36,7 @@ function ArticleList() {
   };
 
   useEffect(() => {
-    fetchArticles(filters);
+    void fetchArticles(filters);
   }, [filters]);
 
   const handleFilterChange = (newFilters: FilterParams) => {
@@ -43,7 +46,7 @@ function ArticleList() {
   const handleSearch = (query: string) => {
     // For now, just trigger a re-fetch with filters
     // You could add a search endpoint to Django later
-    fetchArticles({ ...filters, search: query });
+    void fetchArticles({ ...filters, search: query });
   };
 
   const formatDate = (dateString: string | null | undefined) => {

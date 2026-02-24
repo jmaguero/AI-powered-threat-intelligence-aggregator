@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { FilterParams } from '../types';
+
+import type { FilterParams } from '../types';
+
 import './FilterBar.css';
 
 type Props = {
@@ -59,8 +61,9 @@ function FilterBar({ onFilterChange, onSearch }: Props) {
 
       <div className="filters">
         <div className="filter-group">
-          <label>Source:</label>
+          <label htmlFor="filter-source">Source:</label>
           <select
+            id="filter-source"
             value={filters.source}
             onChange={(e) => handleFilterChange('source', e.target.value)}
           >
@@ -73,8 +76,9 @@ function FilterBar({ onFilterChange, onSearch }: Props) {
         </div>
 
         <div className="filter-group">
-          <label>Threat Type:</label>
+          <label htmlFor="filter-threat-type">Threat Type:</label>
           <input
+            id="filter-threat-type"
             type="text"
             placeholder="e.g., ransomware, phishing"
             value={filters.threat_type}
@@ -83,8 +87,9 @@ function FilterBar({ onFilterChange, onSearch }: Props) {
         </div>
 
         <div className="filter-group">
-          <label>Severity:</label>
+          <label htmlFor="filter-severity">Severity:</label>
           <select
+            id="filter-severity"
             value={filters.severity}
             onChange={(e) => handleFilterChange('severity', e.target.value)}
           >
@@ -97,8 +102,9 @@ function FilterBar({ onFilterChange, onSearch }: Props) {
         </div>
 
         <div className="filter-group">
-          <label>Affected Tech:</label>
+          <label htmlFor="filter-affected-tech">Affected Tech:</label>
           <input
+            id="filter-affected-tech"
             type="text"
             placeholder="e.g., Windows, Chrome"
             value={filters.affected_tech}
@@ -107,8 +113,9 @@ function FilterBar({ onFilterChange, onSearch }: Props) {
         </div>
 
         <div className="filter-group">
-          <label>Published After:</label>
+          <label htmlFor="filter-published-after">Published After:</label>
           <input
+            id="filter-published-after"
             type="date"
             value={filters.published_after}
             onChange={(e) => handleFilterChange('published_after', e.target.value)}
@@ -116,8 +123,9 @@ function FilterBar({ onFilterChange, onSearch }: Props) {
         </div>
 
         <div className="filter-group">
-          <label>Published Before:</label>
+          <label htmlFor="filter-published-before">Published Before:</label>
           <input
+            id="filter-published-before"
             type="date"
             value={filters.published_before}
             onChange={(e) => handleFilterChange('published_before', e.target.value)}

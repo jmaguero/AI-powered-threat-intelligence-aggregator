@@ -1,8 +1,10 @@
+import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+
 import { articlesAPI } from '../api/client';
-import { Article } from '../types';
+import type { Article } from '../types';
+
 import CveDetails from './CveDetails';
 import './ArticleDetail.css';
 
@@ -21,15 +23,16 @@ function ArticleDetail() {
         if (!id) return;
         const response = await articlesAPI.getById(id);
         setArticle(response.data);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch article');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to fetch article';
+        setError(message);
         console.error('Error fetching article:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchArticle();
+    void fetchArticle();
   }, [id]);
 
   const formatDate = (dateString: string | null | undefined) => {
@@ -54,7 +57,7 @@ function ArticleDetail() {
   if (loading) {
     return (
       <div className="container">
-        <button onClick={() => navigate(-1)} className="back-btn">
+        <button onClick={() => { void navigate(-1); }} className="back-btn">
           ← Back
         </button>
         <div className="loading">Loading article...</div>
@@ -65,7 +68,7 @@ function ArticleDetail() {
   if (error || !article) {
     return (
       <div className="container">
-        <button onClick={() => navigate(-1)} className="back-btn">
+        <button onClick={() => { void navigate(-1); }} className="back-btn">
           ← Back
         </button>
         <div className="error">
@@ -77,7 +80,7 @@ function ArticleDetail() {
 
   return (
     <div className="container">
-      <button onClick={() => navigate(-1)} className="back-btn">
+      <button onClick={() => { void navigate(-1); }} className="back-btn">
         ← Back
       </button>
 
