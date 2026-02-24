@@ -40,7 +40,7 @@ export const articlesAPI = {
 
 export const iocAPI = {
   getCveDetails: async (cveId: string, signal?: AbortSignal): Promise<{ data: CveDetailsType }> => {
-    const response = await apiClient.get(`/articles/cves/${cveId}/`, { signal });
+    const response = await apiClient.get(`/articles/cves/${cveId}/`, { ...(signal !== undefined ? { signal } : {}) });
     const parsedData = CveDetailsSchema.parse(response.data);
     return { ...response, data: parsedData };
   },

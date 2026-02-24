@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 import { articlesAPI } from '../api/client';
 import type { Article } from '../types';
@@ -109,7 +109,7 @@ function ArticleDetail() {
           </div>
 
           <a
-            href={article.link}
+            href={article.link ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
             className="original-link"
