@@ -2,16 +2,17 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { articlesAPI } from '../api/client';
+import { Article, FilterParams } from '../types';
 import FilterBar from './FilterBar';
 import './ArticleList.css';
 
 function ArticleList() {
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({});
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterParams>({});
 
-  const fetchArticles = async (filterParams = {}) => {
+  const fetchArticles = async (filterParams: FilterParams = {}) => {
     try {
       setLoading(true);
       setError(null);
@@ -23,7 +24,7 @@ function ArticleList() {
 
       const response = await articlesAPI.getAll(cleanFilters);
       setArticles(response.data);
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'Failed to fetch articles');
       console.error('Error fetching articles:', err);
     } finally {
@@ -35,17 +36,17 @@ function ArticleList() {
     fetchArticles(filters);
   }, [filters]);
 
-  const handleFilterChange = (newFilters) => {
+  const handleFilterChange = (newFilters: FilterParams) => {
     setFilters(newFilters);
   };
 
-  const handleSearch = (query) => {
+  const handleSearch = (query: string) => {
     // For now, just trigger a re-fetch with filters
     // You could add a search endpoint to Django later
     fetchArticles({ ...filters, search: query });
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     try {
       return format(new Date(dateString), 'MMM d, yyyy HH:mm');
@@ -54,7 +55,7 @@ function ArticleList() {
     }
   };
 
-  const getSeverityClass = (severity) => {
+  const getSeverityClass = (severity: string | null | undefined) => {
     if (!severity) return '';
     const lower = severity.toLowerCase();
     if (lower.includes('critical')) return 'severity-critical';

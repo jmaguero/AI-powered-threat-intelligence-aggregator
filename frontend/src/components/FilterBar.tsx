@@ -1,7 +1,13 @@
 import { useState } from 'react';
+import { FilterParams } from '../types';
 import './FilterBar.css';
 
-function FilterBar({ onFilterChange, onSearch }) {
+type Props = {
+  onFilterChange: (filters: FilterParams) => void;
+  onSearch: (query: string) => void;
+};
+
+function FilterBar({ onFilterChange, onSearch }: Props) {
   const [filters, setFilters] = useState({
     source: '',
     threat_type: '',
@@ -13,13 +19,13 @@ function FilterBar({ onFilterChange, onSearch }) {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  const handleFilterChange = (field, value) => {
+  const handleFilterChange = (field: string, value: string) => {
     const newFilters = { ...filters, [field]: value };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
 
-  const handleSearchSubmit = (e) => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(searchQuery);
   };

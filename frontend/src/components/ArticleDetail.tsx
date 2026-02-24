@@ -2,24 +2,26 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { articlesAPI } from '../api/client';
+import { Article } from '../types';
 import CveDetails from './CveDetails';
 import './ArticleDetail.css';
 
 function ArticleDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [article, setArticle] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [article, setArticle] = useState<Article | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchArticle = async () => {
       try {
         setLoading(true);
         setError(null);
+        if (!id) return;
         const response = await articlesAPI.getById(id);
         setArticle(response.data);
-      } catch (err) {
+      } catch (err: any) {
         setError(err.message || 'Failed to fetch article');
         console.error('Error fetching article:', err);
       } finally {
@@ -30,7 +32,7 @@ function ArticleDetail() {
     fetchArticle();
   }, [id]);
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     try {
       return format(new Date(dateString), 'MMMM d, yyyy HH:mm');
@@ -39,7 +41,7 @@ function ArticleDetail() {
     }
   };
 
-  const getSeverityClass = (severity) => {
+  const getSeverityClass = (severity: string | null | undefined) => {
     if (!severity) return '';
     const lower = severity.toLowerCase();
     if (lower.includes('critical')) return 'severity-critical';

@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { iocAPI } from '../api/client';
+import { CveDetailsType } from '../types';
 import './CveDetails.css';
 
-function CveDetails({ cveId }) {
-    const [cveData, setCveData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [expanded, setExpanded] = useState(false);
+type Props = {
+    cveId: string;
+};
+
+function CveDetails({ cveId }: Props) {
+    const [cveData, setCveData] = useState<CveDetailsType | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [expanded, setExpanded] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchCve = async () => {
@@ -14,7 +19,7 @@ function CveDetails({ cveId }) {
                 setLoading(true);
                 const response = await iocAPI.getCveDetails(cveId);
                 setCveData(response.data);
-            } catch (err) {
+            } catch (err: any) {
                 // If 404, we just say not found rather than exploding the whole page
                 if (err.response && err.response.status === 404) {
                     setError('CVE not found in database');
@@ -45,7 +50,7 @@ function CveDetails({ cveId }) {
 
     if (!cveData) return null;
 
-    const getSeverityClass = (severity) => {
+    const getSeverityClass = (severity: string | null | undefined) => {
         if (!severity) return 'severity-unknown';
         const lower = severity.toLowerCase();
         if (lower.includes('critical')) return 'severity-critical';
@@ -108,7 +113,7 @@ function CveDetails({ cveId }) {
                         <div className="cve-products">
                             <strong>Affected Products:</strong>
                             <ul>
-                                {cveData.vulnerable_products.slice(0, 5).map((prod, idx) => (
+                                {cveData.vulnerable_products.slice(0, 5).map((prod: string, idx: number) => (
                                     <li key={idx}>{prod}</li>
                                 ))}
                                 {cveData.vulnerable_products.length > 5 && (
