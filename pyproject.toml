@@ -16,7 +16,7 @@ ollama = "^0.6.1"
 celery = {extras = ["redis"], version = "^5.6.2"}
 django-cors-headers = "^4.9.0"
 pymongo = "^4.11.2"
-chromadb = "^0.5.23"
+chromadb = "^1.5.2"
 
 [build-system]
 requires = ["poetry-core"]
