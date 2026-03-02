@@ -68,7 +68,7 @@ jobs:
           bandit -r ./backend -ll -ii -f json -o bandit-results.json || true # allow failure to upload results first
 
       - name: Upload Bandit Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: bandit-results
