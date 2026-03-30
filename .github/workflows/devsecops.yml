@@ -30,7 +30,7 @@ jobs:
 
       # Trufflehog will fail the build immediately if it finds verified secrets
       - name: Scan for Secrets
-        uses: trufflesecurity/trufflehog@v3.93.4
+        uses: trufflesecurity/trufflehog@v3.94.1
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
