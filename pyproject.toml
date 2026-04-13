@@ -15,7 +15,7 @@ django-filter = "^25.2"
 ollama = "^0.6.1"
 celery = {extras = ["redis"], version = "^5.6.2"}
 django-cors-headers = "^4.9.0"
-pymongo = "^4.11.2"
+pymongo = "^4.16.0"
 chromadb = "^0.5.23"
 
 [build-system]
